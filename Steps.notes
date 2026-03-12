@@ -1,0 +1,9 @@
+#docker image creation
+docker run -d -p 6333:6333 -p 6334:6334 -v qdrant_storage:/qdrant/storage qdrant/qdrant
+DB IP- http://localhost:6333/dashboard#/welcome
+
+to restart qdrant-> 
+Docker rename <container ID> qdrantDB(only once) 
+docker start qdrantDB
+
+

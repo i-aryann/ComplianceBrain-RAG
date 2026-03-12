@@ -1,0 +1,13 @@
+
+qdrant_client
+rank-bm25
+sentence-transformers
+streamlit
+
+##Text extraction
+pymupdf 
+pdfplumber
+tqdm
+
+##chunking
+tiktoken
