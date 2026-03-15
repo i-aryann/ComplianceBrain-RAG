@@ -1,40 +1,34 @@
-from sentence_transformers import SentenceTransformer
+from dotenv import load_dotenv
+from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
 from qdrant_client import QdrantClient
+
+load_dotenv()
 
 COLLECTION_NAME = "regulatory_rag"
 
-model = SentenceTransformer("BAAI/bge-large-en-v1.5")
+model = NVIDIAEmbeddings(
+    model="nvidia/nv-embed-v1",
+    truncate="NONE"
+)
 
 client = QdrantClient(host="localhost", port=6333)
 
 
-def search(query, top_k=5):
+def search(query):
 
-    query_vector = model.encode(query).tolist()
+    query_vector = model.embed_query(query)
 
     results = client.query_points(
         collection_name=COLLECTION_NAME,
         query=query_vector,
-        limit=top_k
+        limit=5
     )
 
-    for i, r in enumerate(results.points):
-
-        payload = r.payload
-
-        print("\n----------------------")
-        print(f"Rank: {i+1}")
-        print(f"Score: {r.score:.4f}")
-        print(f"Regulation: {payload['regulation']}")
-        print(f"Clause: {payload['clause_number']}")
-        print(f"Topic: {payload['topic']}")
-        print(f"Source: {payload['source_file']} | Page {payload['page']}")
-        print("\nText Preview:")
-        print(payload["text"][:500])
+    for r in results.points:
+        print("\nScore:", r.score)
+        print("Topic:", r.payload["topic"])
+        print("Text:", r.payload["text"][:200])
 
 
-if __name__ == "__main__":
-
-    while True:
-        q = input("\nAsk Compliance Question: ")
-        search(q)
+q = input("Ask your query:")
+search(q)

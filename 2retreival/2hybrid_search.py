@@ -1,14 +1,20 @@
 import numpy as np
-from sentence_transformers import SentenceTransformer
+from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
 from qdrant_client import QdrantClient
 from rank_bm25 import BM25Okapi
 from tqdm import tqdm
 import time
+from dotenv import load_dotenv
+
+load_dotenv()
 
 COLLECTION_NAME = "regulatory_rag"
 
 print("🔵 Loading embedding model...")
-model = SentenceTransformer("BAAI/bge-large-en-v1.5")
+model = NVIDIAEmbeddings(
+    model="nvidia/nv-embed-v1",
+    truncate="NONE"
+)
 
 print("🔵 Connecting Qdrant...")
 client = QdrantClient(host="localhost", port=6333)
@@ -55,7 +61,7 @@ def hybrid_search(query, top_k=5):
     print("\n🔎 Embedding query...")
     start_time = time.time()
 
-    query_vector = model.encode(query).tolist()
+    query_vector = model.embed_query(query)
 
     print("🔎 Vector searching...")
     vector_hits = client.query_points(
