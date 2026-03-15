@@ -4,7 +4,7 @@ rank-bm25
 sentence-transformers
 streamlit
 dotenv
-
+langchain_nvidia_ai_endpoints
 ##Text extraction
 pymupdf 
 pdfplumber

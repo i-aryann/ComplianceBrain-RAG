@@ -1,73 +1,135 @@
 import json
+import os
 from tqdm import tqdm
-from sentence_transformers import SentenceTransformer
+from dotenv import load_dotenv
+
+from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
 from qdrant_client import QdrantClient
 from qdrant_client.models import VectorParams, Distance, PointStruct
 
+# ==============================
+# CONFIG
+# ==============================
+
 INPUT_FILE = "chunks_with_metadata.jsonl"
 COLLECTION_NAME = "regulatory_rag"
+BATCH_SIZE = 64
 
-# Load embedding model
-model = SentenceTransformer("BAAI/bge-large-en-v1.5")
+# ==============================
+# LOAD ENV VARIABLES
+# ==============================
 
-# Connect to Qdrant
+load_dotenv()
+
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
+
+if not NVIDIA_API_KEY:
+    raise ValueError("❌ NVIDIA_API_KEY not found in .env")
+
+# ==============================
+# LOAD EMBEDDING MODEL
+# ==============================
+
+model = NVIDIAEmbeddings(
+    model="nvidia/nv-embed-v1",
+    truncate="NONE"
+)
+
+# ==============================
+# AUTO DETECT VECTOR DIMENSION
+# ==============================
+
+test_vec = model.embed_query("dimension test")
+VECTOR_DIM = len(test_vec)
+
+print(f"✅ Detected embedding dimension: {VECTOR_DIM}")
+
+# ==============================
+# CONNECT TO QDRANT
+# ==============================
+
 client = QdrantClient(host="localhost", port=6333)
 
-# Create collection (run only once)
-client.recreate_collection(
+# Safe recreate collection
+if client.collection_exists(COLLECTION_NAME):
+    print("⚠️ Collection exists — deleting")
+    client.delete_collection(COLLECTION_NAME)
+
+client.create_collection(
     collection_name=COLLECTION_NAME,
     vectors_config=VectorParams(
-        size=1024,
+        size=VECTOR_DIM,
         distance=Distance.COSINE
     )
 )
 
-points = []
+print("✅ Collection created")
+
+# ==============================
+# EMBEDDING + INSERTION PIPELINE
+# ==============================
+
+batch_texts = []
+batch_payloads = []
 id_counter = 0
 
 with open(INPUT_FILE, "r", encoding="utf-8") as f:
 
-    for line in tqdm(f):
+    for line in tqdm(f, desc="Embedding Chunks"):
 
         chunk = json.loads(line)
 
-        text = chunk["text"]
+        batch_texts.append(chunk["text"])
 
-        embedding = model.encode(text).tolist()
-
-        payload = {
-            "text": text,
+        batch_payloads.append({
+            "text": chunk["text"],
             "regulation": chunk["regulation"],
             "source_file": chunk["source_file"],
             "page": chunk["page"],
             "clause_number": chunk["clause_number"],
             "topic": chunk["topic"],
             "regulation_type": chunk["regulation_type"]
-        }
+        })
 
-        point = PointStruct(
-            id=id_counter,
-            vector=embedding,
-            payload=payload
-        )
+        if len(batch_texts) == BATCH_SIZE:
 
-        points.append(point)
+            embeddings = model.embed_documents(batch_texts)
 
-        id_counter += 1
+            points = [
+                PointStruct(
+                    id=id_counter + i,
+                    vector=embeddings[i],
+                    payload=batch_payloads[i]
+                )
+                for i in range(len(embeddings))
+            ]
 
-        # Batch insert every 64 points (important)
-        if len(points) == 64:
             client.upsert(
                 collection_name=COLLECTION_NAME,
                 points=points
             )
-            points = []
 
-# Insert remaining points
-if points:
+            id_counter += len(points)
+            batch_texts = []
+            batch_payloads = []
+
+# Insert remaining
+if batch_texts:
+
+    embeddings = model.embed_documents(batch_texts)
+
+    points = [
+        PointStruct(
+            id=id_counter + i,
+            vector=embeddings[i],
+            payload=batch_payloads[i]
+        )
+        for i in range(len(embeddings))
+    ]
+
     client.upsert(
         collection_name=COLLECTION_NAME,
         points=points
     )
 
-print("✅ Embedding + Vector DB Insertion Complete")
+print("🚀 Embedding + Vector DB Insertion Complete")
