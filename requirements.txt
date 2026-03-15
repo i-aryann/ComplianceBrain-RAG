@@ -5,6 +5,7 @@ sentence-transformers
 streamlit
 dotenv
 langchain_nvidia_ai_endpoints
+langchain_groq
 ##Text extraction
 pymupdf 
 pdfplumber

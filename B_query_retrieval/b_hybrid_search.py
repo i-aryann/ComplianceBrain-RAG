@@ -56,7 +56,7 @@ bm25 = BM25Okapi(corpus)
 print("✅ BM25 ready")
 
 
-def hybrid_search(query, top_k=5):
+def hybrid_search(query, top_k=30):
 
     print("\n🔎 Embedding query...")
     start_time = time.time()
@@ -100,24 +100,43 @@ def hybrid_search(query, top_k=5):
         bm = bm25_scores_dict.get(cid, 0)
         hybrid_scores[cid] = 0.7 * vec + 0.3 * bm
 
-    ranked = sorted(hybrid_scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
+    ranked = sorted(
+        hybrid_scores.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )[:top_k]
 
     end_time = time.time()
-
     print(f"⚡ Retrieval completed in {end_time - start_time:.2f} sec")
 
+    results = []
+
     for rank, (pid, score) in enumerate(ranked):
+
         payload = id_to_payload[pid]
 
         print("\n----------------------")
         print(f"Rank: {rank+1}")
         print(f"Hybrid Score: {score:.4f}")
-        print(f"Regulation: {payload['regulation']}")
-        print(f"Clause: {payload['clause_number']}")
-        print(f"Topic: {payload['topic']}")
+        print(f"Regulation: {payload.get('regulation')}")
+        print(f"Clause: {payload.get('clause_number')}")
+        print(f"Topic: {payload.get('topic')}")
         print("\nText Preview:")
-        print(payload["text"][:400])
+        print(payload.get("text")[:400])
 
+        # ⭐ BUILD RESULT OBJECT (VERY IMPORTANT)
+        results.append({
+            "id": pid,
+            "score": score,
+            "text": payload.get("text"),
+            "regulation": payload.get("regulation"),
+            "clause": payload.get("clause_number"),
+            "topic": payload.get("topic"),
+            "page": payload.get("page")
+        })
+
+    # ⭐⭐⭐ MOST IMPORTANT LINE ⭐⭐⭐
+    return results
 
 if __name__ == "__main__":
     while True:

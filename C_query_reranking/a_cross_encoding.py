@@ -18,7 +18,7 @@ embed_model = NVIDIAEmbeddings(
 
 reranker = NVIDIARerank(
     model="nv-rerank-qa-mistral-4b:1",
-    api_key="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",
+    api_key="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",
     top_n=5
 )
 
@@ -89,24 +89,47 @@ def rrf_fusion(dense, sparse):
 
 
 # ================= NVIDIA RERANK =================
-def rerank(query, chunks):
+from langchain_core.documents import Document
 
-    docs = [
-        Document(
-            page_content=c["text"][:900],   # reranker friendly
-            metadata=c
+def rerank(query, docs, top_k=5):
+
+    if docs is None or len(docs) == 0:
+        return []
+
+    try:
+
+        print("🔎 Calling NVIDIA Reranker...")
+
+        # ⭐ Convert dict docs → LangChain Documents
+        lc_docs = [
+            Document(page_content=d["text"], metadata={"orig_index": i})
+            for i, d in enumerate(docs)
+        ]
+
+        ranked = reranker.compress_documents(
+            query=query,
+            documents=lc_docs
         )
-        for c in chunks
-    ]
 
-    ranked = reranker.compress_documents(
-        documents=docs,
-        query=query
-    )
+        reranked_docs = []
 
-    return [d.metadata for d in ranked]
+        for rank_doc in ranked[:top_k]:
 
+            idx = rank_doc.metadata["orig_index"]
 
+            # NVIDIA may not return score → assign rank score
+            score = getattr(rank_doc, "score", None)
+
+            doc = docs[idx]
+            doc["rerank_score"] = score if score is not None else 1.0
+
+            reranked_docs.append(doc)
+
+        return reranked_docs
+
+    except Exception as e:
+        print("❌ Reranker failed:", str(e))
+        return []
 # ================= CONTEXT =================
 def build_context(chunks):
 

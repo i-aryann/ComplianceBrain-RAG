@@ -82,13 +82,15 @@ with open(INPUT_FILE, "r", encoding="utf-8") as f:
         batch_texts.append(chunk["text"])
 
         batch_payloads.append({
-            "text": chunk["text"],
-            "regulation": chunk["regulation"],
-            "source_file": chunk["source_file"],
-            "page": chunk["page"],
-            "clause_number": chunk["clause_number"],
-            "topic": chunk["topic"],
-            "regulation_type": chunk["regulation_type"]
+            "text": chunk.get("text", ""),
+            "regulation": chunk.get("regulation", "UNKNOWN"),
+            "source_file": chunk.get("source_file", "UNKNOWN"),
+            "page": chunk.get("page", -1),
+
+            # ⭐ NEW SAFE DEFAULTS
+            "clause_number": chunk.get("clause_number", "UNKNOWN"),
+            "topic": chunk.get("topic", "GENERAL"),
+            "regulation_type": chunk.get("regulation_type", "UNKNOWN")
         })
 
         if len(batch_texts) == BATCH_SIZE:
