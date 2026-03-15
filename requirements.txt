@@ -3,6 +3,7 @@ qdrant_client
 rank-bm25
 sentence-transformers
 streamlit
+dotenv
 
 ##Text extraction
 pymupdf 
