@@ -45,7 +45,10 @@ print(f"✅ Detected embedding dimension: {VECTOR_DIM}")
 # CONNECT TO QDRANT
 # ==============================
 
-client = QdrantClient(host="localhost", port=6333)
+client = QdrantClient(
+    url=os.getenv("QDRANT_URL"),
+    api_key=os.getenv("QDRANT_API_KEY"),
+)
 
 # Safe recreate collection
 if client.collection_exists(COLLECTION_NAME):

@@ -8,24 +8,34 @@ from langchain_core.documents import Document
 import os
 
 load_dotenv()
+NVIDIA_API_KEY=os.getenv("NVIDIA_API_KEY")
+NVIDIA_REASONING= os.getenv("NVIDIA_REASONING")
 
 COLLECTION = "regulatory_rag"
 
 # ================= MODELS =================
 embed_model = NVIDIAEmbeddings(
     model="nvidia/nv-embed-v1",
-    api_key=os.getenv("NVIDIA_API_KEY"),
+    api_key=NVIDIA_API_KEY,
     truncate="NONE"
 )
 
 reranker = NVIDIARerank(
     model="nv-rerank-qa-mistral-4b:1",
-    api_key=os.getenv("nvidia_reasoning_llm_key"),
+    api_key=NVIDIA_REASONING,
     top_n=5
 )
+if not NVIDIA_API_KEY:
+    raise ValueError("NVIDIA_API_KEY not set")
+
+if not NVIDIA_REASONING:
+    raise ValueError("NVIDIA_REASONING_LLM_KEY not set")
 
 # ================= QDRANT =================
-client = QdrantClient(host="localhost", port=6333)
+client = QdrantClient(
+    url=os.getenv("QDRANT_URL"),
+    api_key=os.getenv("QDRANT_API_KEY"),
+)
 
 print("Loading chunks for BM25...")
 

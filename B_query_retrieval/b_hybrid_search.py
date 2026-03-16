@@ -19,7 +19,10 @@ model = NVIDIAEmbeddings(
 )
 
 print("🔵 Connecting Qdrant...")
-client = QdrantClient(host="localhost", port=6333)
+client = QdrantClient(
+    url=os.getenv("QDRANT_URL"),
+    api_key=os.getenv("QDRANT_API_KEY"),
+)
 
 # -------- LOAD FULL CORPUS --------
 
