@@ -5,6 +5,7 @@ from rank_bm25 import BM25Okapi
 from qdrant_client import QdrantClient
 from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings, NVIDIARerank
 from langchain_core.documents import Document
+import os
 
 load_dotenv()
 
@@ -18,7 +19,6 @@ embed_model = NVIDIAEmbeddings(
 
 reranker = NVIDIARerank(
     model="nv-rerank-qa-mistral-4b:1",
-    api_key="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",
     top_n=5
 )
 

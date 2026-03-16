@@ -1,7 +1,6 @@
 import sys
 import os
 
-# IMPORTANT → allow running this file directly
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from B_query_retrieval.b_hybrid_search import hybrid_search
@@ -11,75 +10,43 @@ from D_rag_pipeline.b_prompt_template import build_prompt
 from D_rag_pipeline.c_llm_client import generate_answer
 
 
-def rag_answer(query):
+class RAGPipeline:
 
-    print("\n🔎 Running Hybrid Retrieval...\n")
+    def run(self, query):
 
-    # ---------- RETRIEVAL ----------
-    results = hybrid_search(query, top_k=30)
+        # ---------- RETRIEVAL ----------
+        results = hybrid_search(query, top_k=30) or []
 
-    if results is None:
-        results = []
+        if len(results) == 0:
+            return {
+                "answer": "No regulatory chunks retrieved.",
+                "sources": []
+            }
 
-    print("✅ Results count:", len(results))
+        # ---------- RERANK ----------
+        top_chunks = rerank(query, results) or []
 
-    if len(results) == 0:
-        return "No regulatory chunks retrieved."
+        if len(top_chunks) == 0:
+            top_chunks = results
 
-    # ---------- RERANK ----------
-    print("\n🔎 Running Reranker...\n")
+        # ---------- CONTEXT ----------
+        context_chunks = top_chunks[:5]
 
-    top_chunks = rerank(query, results)
+        context = build_context(context_chunks)
 
-    if top_chunks is None:
-        top_chunks = []
+        # ---------- PROMPT ----------
+        prompt = build_prompt(query, context)
 
-    print("✅ Reranked count:", len(top_chunks))
+        # ---------- LLM ----------
+        answer = generate_answer(prompt)
 
-    # DEBUG SAMPLE
-    if len(top_chunks) > 0:
-        print("\n⭐ Sample Reranked Chunk:\n")
-        print(top_chunks[0])
+        # ---------- SOURCES ----------
+        sources = [
+            c.get("doc_id", "unknown")
+            for c in context_chunks
+        ]
 
-    # ---------- FALLBACK SAFETY ----------
-    if len(top_chunks) == 0:
-        print("\n⚠ Reranker returned empty → Using Hybrid Results\n")
-        top_chunks = results
-
-    # ---------- CONTEXT ----------
-    context_chunks = top_chunks[:5]
-
-    print("\n📦 Building Context with chunks:", len(context_chunks))
-
-    context = build_context(context_chunks)
-
-    # ---------- PROMPT ----------
-    prompt = build_prompt(query, context)
-
-    # ---------- LLM ----------
-    print("\n🤖 Generating Answer...\n")
-
-    answer = generate_answer(prompt)
-
-    return answer
-
-
-# ---------- CLI RUN ----------
-if __name__ == "__main__":
-
-    while True:
-
-        query = input("\nEnter compliance question (or type exit): ")
-
-        if query.lower() == "exit":
-            break
-
-        try:
-            ans = rag_answer(query)
-
-            print("\n✅ FINAL ANSWER:\n")
-            print(ans)
-
-        except Exception as e:
-            print("\n❌ PIPELINE ERROR:")
-            print(str(e))
+        return {
+            "answer": answer,
+            "sources": sources
+        }
