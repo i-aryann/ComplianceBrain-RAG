@@ -14,11 +14,13 @@ COLLECTION = "regulatory_rag"
 # ================= MODELS =================
 embed_model = NVIDIAEmbeddings(
     model="nvidia/nv-embed-v1",
+    api_key=os.getenv("NVIDIA_API_KEY"),
     truncate="NONE"
 )
 
 reranker = NVIDIARerank(
     model="nv-rerank-qa-mistral-4b:1",
+    api_key=os.getenv("nvidia_reasoning_llm_key"),
     top_n=5
 )
 

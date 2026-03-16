@@ -21,10 +21,6 @@ BATCH_SIZE = 64
 
 load_dotenv()
 
-NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
-
-if not NVIDIA_API_KEY:
-    raise ValueError("❌ NVIDIA_API_KEY not found in .env")
 
 # ==============================
 # LOAD EMBEDDING MODEL
@@ -32,6 +28,7 @@ if not NVIDIA_API_KEY:
 
 model = NVIDIAEmbeddings(
     model="nvidia/nv-embed-v1",
+    api_key= os.getenv("NVIDIA_API_KEY"),
     truncate="NONE"
 )
 

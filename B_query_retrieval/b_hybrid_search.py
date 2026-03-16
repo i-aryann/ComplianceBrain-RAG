@@ -5,6 +5,7 @@ from rank_bm25 import BM25Okapi
 from tqdm import tqdm
 import time
 from dotenv import load_dotenv
+import os
 
 load_dotenv()
 
@@ -13,6 +14,7 @@ COLLECTION_NAME = "regulatory_rag"
 print("🔵 Loading embedding model...")
 model = NVIDIAEmbeddings(
     model="nvidia/nv-embed-v1",
+    api_key= os.getenv("NVIDIA_API_KEY"),
     truncate="NONE"
 )
 
