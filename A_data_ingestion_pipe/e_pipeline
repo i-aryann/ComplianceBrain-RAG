@@ -1,0 +1,51 @@
+import subprocess
+import sys
+
+
+def run_step(step_name, script_name):
+    print(f"\n==============================")
+    print(f"🚀 Running Step → {step_name}")
+    print(f"==============================\n")
+
+    result = subprocess.run([sys.executable, script_name])
+
+    if result.returncode != 0:
+        print(f"\n❌ Pipeline Failed at Step → {step_name}")
+        sys.exit(1)
+
+    print(f"\n✅ Completed Step → {step_name}\n")
+
+
+def run_ingestion_pipeline():
+
+    print("\n🔥 STARTING FULL RAG INGESTION PIPELINE 🔥\n")
+
+    # Step-1 Extraction
+    run_step(
+        "PDF Parsing & Raw JSON Creation",
+        "a_data_extraction.py"
+    )
+
+    # Step-2 Chunking
+    run_step(
+        "Clause Chunking",
+        "b_data_chunking.py"
+    )
+
+    # Step-3 Metadata
+    run_step(
+        "Metadata Enrichment",
+        "c_adding_metadata.py"
+    )
+
+    # Step-4 Embedding + Qdrant Upload
+    run_step(
+        "Embedding Generation & Vector Upload",
+        "d_embedding_chunks.py"
+    )
+
+    print("\n🎉🎉 FULL INGESTION PIPELINE COMPLETED SUCCESSFULLY 🎉🎉\n")
+
+
+if __name__ == "__main__":
+    run_ingestion_pipeline()
