@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
 from qdrant_client import QdrantClient
 from qdrant_client.models import VectorParams, Distance, PointStruct
+import time
 
 # ==============================
 # CONFIG
@@ -13,7 +14,7 @@ from qdrant_client.models import VectorParams, Distance, PointStruct
 
 INPUT_FILE = "chunks_with_metadata.jsonl"
 COLLECTION_NAME = "regulatory_rag"
-BATCH_SIZE = 64
+BATCH_SIZE = 8
 
 # ==============================
 # LOAD ENV VARIABLES
@@ -48,6 +49,7 @@ print(f"✅ Detected embedding dimension: {VECTOR_DIM}")
 client = QdrantClient(
     url=os.getenv("QDRANT_URL"),
     api_key=os.getenv("QDRANT_API_KEY"),
+    timeout=120
 )
 
 # Safe recreate collection
@@ -106,10 +108,16 @@ with open(INPUT_FILE, "r", encoding="utf-8") as f:
                 for i in range(len(embeddings))
             ]
 
-            client.upsert(
-                collection_name=COLLECTION_NAME,
-                points=points
-            )
+            for attempt in range(3):
+                try:
+                    client.upsert(
+                        collection_name=COLLECTION_NAME,
+                        points=points
+                    )
+                    break
+                except Exception as e:
+                    print(f"⚠️ Upload failed, retry {attempt+1}/3")
+                    time.sleep(3)
 
             id_counter += len(points)
             batch_texts = []
