@@ -1,48 +1,130 @@
-ComplianceBrain-RAG 🧠📚
+# Regulatory Compliance Assistant (Hybrid RAG System)
 
-AI-Powered Regulatory Compliance Assistant using Retrieval Augmented Generation (RAG).
+An end-to-end Retrieval-Augmented Generation (RAG) system designed to assist with interpretation and analysis of financial regulatory documents such as RBI Master Directions, Basel guidelines, and SEBI regulations.
 
-ComplianceBrain-RAG is an intelligent system designed to help users understand and query complex financial and regulatory guidelines such as RBI circulars, Basel norms, and audit requirements.
-It uses modern LLM + Vector Database architecture to provide accurate, contextual, and source-grounded answers.
+This project focuses on building a production-thinking AI system that can retrieve, interpret, and reason over compliance obligations using modern retrieval engineering techniques.
 
-🚀 Features
+---
 
-🔎 Ask natural language questions about regulations
+## Overview
 
-📄 Retrieves relevant regulatory documents
+Financial institutions and consulting firms deal with large volumes of regulatory documentation. Manually locating relevant clauses and interpreting obligations is time-consuming and error-prone.
 
-🤖 Generates context-aware answers using LLM
+This system demonstrates how hybrid retrieval and LLM-driven reasoning can be combined to enable:
 
-📚 Source-based responses (reduces hallucination)
+* Clause-level semantic search across regulatory documents
+* Context-grounded compliance answers
+* Regulation comparison workflows
+* Automated compliance checklist generation
 
-⚡ Fast semantic search with vector embeddings
+The goal of the project is to simulate real enterprise document intelligence use-cases.
 
-🧩 Modular and production-ready architecture
+---
 
-🏗️ Tech Stack
+## Key Features
 
-Python
+* Hybrid Retrieval (Vector + BM25) for high-precision clause discovery
+* Cross-Encoder Reranking to improve relevance of top results
+* Metadata-aware search (filter by regulation, topic, clause number)
+* Legal-aware document chunking and preprocessing pipeline
+* Compliance risk reasoning workflows
+* Interactive Streamlit interface for natural language querying
+* Containerized deployment setup
 
-LangChain / LangGraph
+---
 
-Qdrant (Vector Database)
+## System Architecture
 
-Embedding Models (OpenAI / HuggingFace)
+The pipeline consists of the following stages:
 
-LLM (OpenAI / Local Model)
+1. Regulatory document ingestion and parsing
+2. Clause-aware segmentation and metadata enrichment
+3. Embedding generation and vector indexing in Qdrant
+4. Hybrid retrieval and reranking
+5. LLM-based grounded answer generation
+6. UI layer for user interaction
 
-Docker
+This design reflects practical considerations around retrieval accuracy, latency, and explainability.
 
-FastAPI / Streamlit (for UI – optional)
+---
 
-📂 Project Structure
-ComplianceBrain-RAG/
-│
-├── data/                 # Regulatory PDFs / circulars
-├── ingestion/            # Data loading & chunking scripts
-├── embeddings/           # Embedding generation
-├── vectorstore/          # Qdrant setup & configs
-├── rag_pipeline/         # Retrieval + generation logic
-├── app/                  # API or UI application
-├── requirements.txt
-└── README.md
+## Dataset
+
+The corpus includes publicly available regulatory documents such as:
+
+* RBI Master Directions (KYC, NBFC regulation, digital lending)
+* Basel Committee banking supervision frameworks
+* SEBI regulatory guidelines
+* Selected corporate governance and compliance circulars
+
+All documents are processed into structured clause-level chunks for retrieval.
+
+---
+
+## Tech Stack
+
+* Python
+* Qdrant Vector Database
+* Sentence Transformers (BGE Embeddings)
+* Rank-BM25
+* Streamlit
+* Docker
+
+---
+
+## Evaluation Approach
+
+Retrieval quality was evaluated using curated compliance queries measuring:
+
+* Top-k retrieval relevance
+* Citation grounding
+* Latency performance
+* Impact of hybrid retrieval vs pure vector search
+
+These experiments helped tune chunking strategy, embedding selection, and score fusion.
+
+---
+
+## Running the Project
+
+### 1. Start Vector Database
+
+```bash
+docker run -p 6333:6333 qdrant/qdrant
+```
+
+### 2. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Run the Application
+
+```bash
+streamlit run app.py
+```
+
+---
+
+## Future Improvements
+
+* Multi-modal document understanding (tables / scanned PDFs)
+* Real-time regulatory update ingestion
+* Advanced agentic workflows for compliance audits
+* Cloud deployment with scalable vector indexing
+
+---
+
+## Motivation
+
+This project was built to explore how retrieval-focused AI systems can support regulatory interpretation workflows in banking, consulting, and fintech environments.
+
+It emphasizes engineering trade-offs such as retrieval accuracy vs latency, open-source vs API-based models, and explainability in high-stakes document intelligence systems.
+
+---
+
+## Author
+
+Aryan Gupta
+Data & AI Enthusiast focused on Retrieval Engineering, NLP Systems and Applied Analytics.
