@@ -1,6 +1,6 @@
 ComplianceBrain-RAG 🧠📚
 
-AI-Powered Regulatory Compliance Assistant using Retrieval Augmented Generation (RAG)
+AI-Powered Regulatory Compliance Assistant using Retrieval Augmented Generation (RAG).
 
 ComplianceBrain-RAG is an intelligent system designed to help users understand and query complex financial and regulatory guidelines such as RBI circulars, Basel norms, and audit requirements.
 It uses modern LLM + Vector Database architecture to provide accurate, contextual, and source-grounded answers.
