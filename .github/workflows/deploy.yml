@@ -35,7 +35,7 @@ jobs:
           docker rm rag-container || true
           docker run -d --name rag-container -p 8501:8501 \
             -e NVIDIA_API_KEY=${{ secrets.NVIDIA_API_KEY }} \
-            -e NVIDIA_REASONING_LLM_KEY=${{ secrets.NVIDIA_REASONING }} \
+            -e NVIDIA_REASONING=${{ secrets.NVIDIA_REASONING }} \
             -e QDRANT_URL=${{ secrets.QDRANT_URL }} \
             -e GROQ_API_KEY=${{ secrets.GROQ_API_KEY }} \
             -e QDRANT_API_KEY=${{ secrets.QDRANT_API_KEY }} \
