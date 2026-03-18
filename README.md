@@ -1,6 +1,6 @@
 # Regulatory Compliance Assistant (Hybrid RAG System)
 
-An end-to-end Retrieval-Augmented Generation (RAG) system designed to assist with interpretation and analysis of financial regulatory documents such as RBI Master Directions, Basel guidelines, and SEBI regulations.
+An end-to-end Retrieval-Augmented Generation (RAG) system designed to assist with integit commitrpretation and analysis of financial regulatory documents such as RBI Master Directions, Basel guidelines, and SEBI regulations.
 
 This project focuses on building a production-thinking AI system that can retrieve, interpret, and reason over compliance obligations using modern retrieval engineering techniques.
 
