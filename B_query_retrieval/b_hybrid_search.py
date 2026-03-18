@@ -137,7 +137,8 @@ def hybrid_search(query, top_k=30):
             "regulation": payload.get("regulation"),
             "clause": payload.get("clause_number"),
             "topic": payload.get("topic"),
-            "page": payload.get("page")
+            "page": payload.get("page"),
+            "doc_id": payload.get("doc_id", f"{payload.get('source_file', 'UNKNOWN')} - Clause {payload.get('clause_number', 'UNKNOWN')}")
         })
 
     # ⭐⭐⭐ MOST IMPORTANT LINE ⭐⭐⭐

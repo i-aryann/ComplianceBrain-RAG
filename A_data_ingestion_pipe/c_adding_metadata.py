@@ -87,6 +87,7 @@ with open(INPUT_FILE, "r", encoding="utf-8") as f:
         chunk["clause_number"] = clause_number
         chunk["topic"] = topic
         chunk["regulation_type"] = regulation_type
+        chunk["doc_id"] = f"{chunk.get('source_file', 'UNKNOWN')} - Clause {clause_number}"
 
         new_chunks.append(chunk)
 
