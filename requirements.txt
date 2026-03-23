@@ -9,7 +9,7 @@ langchain_groq
 ##Text extraction
 pymupdf 
 pdfplumber
-tqdm
+docling
 
 ##chunking
 tiktoken
