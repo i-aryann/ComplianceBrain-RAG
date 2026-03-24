@@ -8,6 +8,8 @@ import time
 
 app = FastAPI()
 
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -23,7 +25,9 @@ rag = RAGPipeline()
 class Query(BaseModel):
     question: str
 
-
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 @app.post("/ask-stream")
 def ask_stream(q: Query):
