@@ -40,3 +40,4 @@ jobs:
             cd ~/ComplianceBrain-RAG
             docker compose pull
             docker compose up -d
+            docker compose restart nginx
