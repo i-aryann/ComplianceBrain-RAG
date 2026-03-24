@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+pydantic
+qdrant_client
+rank-bm25
+langchain_nvidia_ai_endpoints
+langchain_groq
+python-dotenv
+tiktoken
+numpy
+pandas
+tqdm
