@@ -8,7 +8,6 @@ langchain_nvidia_ai_endpoints
 langchain_groq
 pymupdf 
 pdfplumber
-docling
 fastapi
 tiktoken
 uvicorn
