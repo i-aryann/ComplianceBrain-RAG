@@ -1,0 +1,38 @@
+name: Deploy ComplianceBrain RAG
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/ComplianceBrain-RAG
+            git pull origin main
+
+            echo "Updating backend..."
+            cd Backend
+            source ragvenv/bin/activate
+            pip install -r requirements.txt
+            pm2 restart rag-backend
+
+            echo "Building frontend..."
+            cd ../Frontend/frontend
+            npm install --legacy-peer-deps
+            npm run build
+            sudo cp -r dist/* /var/www/html/
+
+            echo "Reloading nginx..."
+            sudo systemctl reload nginx
+
+            echo "Deployment completed!"
