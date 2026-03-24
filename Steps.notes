@@ -39,3 +39,9 @@ pulling docker image to ubuntu machine- docker pull aryanondock/regulatory-rag:l
 creating dotenv on server -nano rag.env> then paste apis and save and exit
 
 to verify running container- docker ps
+
+
+
+
+uvicorn fastapi run=
+uvicorn main:app --reload --host 127.0.0.1 --port 8000

@@ -1,8 +1,23 @@
 import { motion } from 'framer-motion';
 import { Lightning, User } from '@phosphor-icons/react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export const ChatMessage = ({ message, isStreaming = false }) => {
   const isUser = message.role === 'user';
+
+  let formattedContent = message.content || "";
+  
+  // Force inline bullet points onto new lines
+  formattedContent = formattedContent.replace(/ ([-\*]) \*\*/g, '\n\n$1 **');
+  
+  // Clean up accidental bold tags around Citations if the LLM injected them
+  formattedContent = formattedContent.replace(/\*\*Citations:\*\*/g, 'Citations:');
+  
+  // Force Citations block and its items to break into new lines correctly
+  formattedContent = formattedContent.replace(/Citations:/g, '\n\n**Citations:**\n\n');
+  formattedContent = formattedContent.replace(/\) - /g, ')\n- ');
+  formattedContent = formattedContent.replace(/\*\*Citations:\*\*\n\n\s*- /g, '**Citations:**\n\n- ');
 
   return (
     <motion.div
@@ -36,8 +51,10 @@ export const ChatMessage = ({ message, isStreaming = false }) => {
               Intelligence Report
             </div>
           )}
-          <div className={`text-sm leading-relaxed ${isStreaming ? 'streaming-cursor' : ''}`}>
-            {message.content}
+          <div className={`text-sm leading-relaxed prose prose-sm max-w-none ${isUser ? 'prose-invert' : ''} ${isStreaming ? 'streaming-cursor' : ''}`}>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {formattedContent}
+            </ReactMarkdown>
           </div>
           {message.timestamp && (
             <div className={`text-xs mt-2 ${isUser ? 'text-white/60' : 'text-[#52525B]'}`}>

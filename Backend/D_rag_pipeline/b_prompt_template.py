@@ -18,6 +18,9 @@ STRICT RULES:
 3. Do NOT assume or fabricate compliance rules.
 4. If context is fragmented, still extract best possible regulatory rule.
 5. Provide structured answer:
+6. Format your answer using STRICT Markdown:
+   - ALWAYS use double line breaks (blank lines) before and after lists.
+   - EVERY bullet point or numbered list item MUST start on a completely new line. Do NOT combine list items into a single paragraph.
 
 FINAL ANSWER FORMAT:
 
