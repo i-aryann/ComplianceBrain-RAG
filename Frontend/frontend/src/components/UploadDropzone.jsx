@@ -76,7 +76,7 @@ export const UploadDropzone = ({ onUpload }) => {
       </span>
       
       <motion.label
-        className={`upload-dropzone ${isDragging ? 'border-[#002FA7] bg-[#002FA7]/5' : ''}`}
+        className={`upload-dropzone relative ${isDragging ? 'border-[#002FA7] bg-[#002FA7]/5' : ''}`}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
@@ -104,6 +104,9 @@ export const UploadDropzone = ({ onUpload }) => {
         <span className="text-xs text-[#52525B]/60">
           PDF, TXT, DOC up to 10MB
         </span>
+        <div className="absolute bottom-2 left-2 pointer-events-none opacity-50 select-none">
+          <span className="text-[10px] font-bold text-[#002FA7] uppercase tracking-wider">Live Soon</span>
+        </div>
       </motion.label>
 
       {/* Uploaded files list */}
