@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { PaperPlaneRight, Paperclip } from '@phosphor-icons/react';
+import { PaperPlaneRight, Sparkle } from '@phosphor-icons/react';
 import { Button } from './ui/button';
 
 export const ChatInput = ({ onSendMessage, isLoading = false, onAttachFile }) => {
@@ -40,11 +40,11 @@ export const ChatInput = ({ onSendMessage, isLoading = false, onAttachFile }) =>
         type="button"
         variant="ghost"
         size="icon"
-        className="h-10 w-10 flex-shrink-0 text-[#52525B] hover:text-[#002FA7] hover:bg-[#002FA7]/5"
-        onClick={onAttachFile}
+        className="h-10 w-10 flex-shrink-0 text-[#52525B] opacity-50 cursor-not-allowed"
+        disabled={true}
         data-testid="attach-file-btn"
       >
-        <Paperclip size={20} />
+        <Sparkle size={20} />
       </Button>
 
       {/* Text input */}

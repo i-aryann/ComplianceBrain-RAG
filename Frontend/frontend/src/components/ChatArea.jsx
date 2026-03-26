@@ -76,9 +76,9 @@ export const ChatArea = ({
             <Question size={20} className="text-[#52525B]" />
           </button>
           <div className="flex items-center gap-2 pl-3 border-l border-black/10">
-            <span className="text-sm font-medium">Editorial Intelligence</span>
+            <span className="text-sm font-medium">By Aryan Gupta</span>
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#002FA7] to-[#00227A] flex items-center justify-center text-white text-xs font-bold">
-              EI
+              AG
             </div>
           </div>
         </div>
@@ -113,20 +113,7 @@ export const ChatArea = ({
             onAttachFile={onAttachFile}
           />
           
-          {/* Status bar */}
-          <div className="flex items-center justify-between mt-3 px-1">
-            <div className="flex items-center gap-4">
-              <div className="status-indicator">
-                <span className="status-dot"></span>
-                <span className="label-text">RAG Mode Active</span>
-              </div>
-              <div className="status-indicator">
-                <Lightning size={12} weight="fill" className="text-[#002FA7]" />
-                <span className="label-text">Encrypted Session</span>
-              </div>
-            </div>
-            <span className="text-xs text-[#52525B]">v2.4.0-stable | Editorial Engine</span>
-          </div>
+
         </div>
       </div>
     </main>
