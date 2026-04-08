@@ -44,7 +44,10 @@ while True:
     )
 
     for p in tqdm(points, desc="Loading batch"):
-        corpus.append(p.payload["text"].split())
+        text = p.payload.get("text")
+        if not text:          # skip null/empty payloads
+            continue
+        corpus.append(text.split())
         id_to_payload[p.id] = p.payload
         id_list.append(p.id)
 
@@ -129,16 +132,19 @@ def hybrid_search(query, top_k=30):
         print("\nText Preview:")
         print(payload.get("text")[:400])
 
-        # ⭐ BUILD RESULT OBJECT (VERY IMPORTANT)
+        # ⭐ BUILD RESULT OBJECT — include ALL fields needed for citations
         results.append({
-            "id": pid,
-            "score": score,
-            "text": payload.get("text"),
-            "regulation": payload.get("regulation"),
-            "clause": payload.get("clause_number"),
-            "topic": payload.get("topic"),
-            "page": payload.get("page"),
-            "doc_id": payload.get("doc_id", f"{payload.get('source_file', 'UNKNOWN')} - Clause {payload.get('clause_number', 'UNKNOWN')}")
+            "id":              pid,
+            "score":           score,
+            "text":            payload.get("text"),
+            "regulation":      payload.get("regulation"),
+            "source_file":     payload.get("source_file"),       # was missing!
+            "clause":          payload.get("clause_number"),
+            "clause_number":   payload.get("clause_number"),     # both key styles
+            "topic":           payload.get("topic"),
+            "page":            payload.get("page"),
+            "regulation_type": payload.get("regulation_type"),
+            "doc_id":          payload.get("doc_id") or f"{payload.get('regulation','UNKNOWN')} | {payload.get('source_file','UNKNOWN')} | Clause {payload.get('clause_number','UNKNOWN')}",
         })
 
     # ⭐⭐⭐ MOST IMPORTANT LINE ⭐⭐⭐
