@@ -8,16 +8,36 @@ OUTPUT_FILE = "chunks_with_metadata.jsonl"
 
 def extract_clause_number(text):
     """
-    Extract clause number like:
-    5
-    5.2
-    5.2.3
+    Extract clause/section number from regulatory text.
+    Handles patterns like:
+      5.2.3  →  multi-level decimal
+      5.2    →  two-level decimal
+      5.     →  single numbered clause
+      (1)    →  parenthesised number
+      Section 4  →  section keyword
+      Chapter 3  →  chapter keyword
     """
 
-    match = re.search(r'\b\d+(?:\.\d+)+', text)
-
+    # Priority 1: multi-level decimal  e.g. 5.2.3 or 5.2
+    match = re.search(r'\b(\d+(?:\.\d+){1,})', text)
     if match:
-        return match.group()
+        return match.group(1)
+
+    # Priority 2: Section / Chapter keyword  e.g. "Section 4" or "CHAPTER 12"
+    match = re.search(r'(?:section|chapter|clause|article|para(?:graph)?)\s+(\d+(?:\.\d+)*)',
+                      text, re.IGNORECASE)
+    if match:
+        return match.group(1)
+
+    # Priority 3: parenthesised number  e.g. (1) or (iv)
+    match = re.search(r'^\s*\((\d+|[ivxlcdm]+)\)', text, re.IGNORECASE | re.MULTILINE)
+    if match:
+        return match.group(1)
+
+    # Priority 4: standalone numbered item at line start  e.g. "4. Some rule"
+    match = re.search(r'^\s*(\d{1,3})\.', text, re.MULTILINE)
+    if match:
+        return match.group(1)
 
     return "UNKNOWN"
 
@@ -87,7 +107,10 @@ with open(INPUT_FILE, "r", encoding="utf-8") as f:
         chunk["clause_number"] = clause_number
         chunk["topic"] = topic
         chunk["regulation_type"] = regulation_type
-        chunk["doc_id"] = f"{chunk.get('source_file', 'UNKNOWN')} - Clause {clause_number}"
+        # Friendly doc_id used in citations
+        src = chunk.get('source_file', 'UNKNOWN')
+        reg = chunk.get('regulation', regulation_type)
+        chunk["doc_id"] = f"{reg} | {src} | Clause {clause_number}"
 
         new_chunks.append(chunk)
 

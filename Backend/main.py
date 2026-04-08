@@ -1,14 +1,13 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from datetime import datetime
 from D_rag_pipeline.d_pipeline import RAGPipeline
-from fastapi.responses import StreamingResponse
+import json
 import time
 
 app = FastAPI()
-
-
 
 app.add_middleware(
     CORSMiddleware,
@@ -25,12 +24,22 @@ rag = RAGPipeline()
 class Query(BaseModel):
     question: str
 
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
+
 @app.post("/ask-stream")
 def ask_stream(q: Query):
+    """
+    Streams the answer word-by-word (SSE-style plain text), then
+    finalises with a JSON line carrying structured source citations.
+    
+    Protocol:
+      • Every token line:  plain text word(s) followed by a space
+      • Final line:        "__SOURCES__:<json-array>"
+    """
 
     def generate():
 
@@ -38,14 +47,19 @@ def ask_stream(q: Query):
 
         result = rag.run(q.question)
 
-        answer = result["answer"]
+        answer  = result.get("answer", "")
+        sources = result.get("sources", [])
 
-        # simulate token streaming
-        words = answer.split()
-
+        # Stream answer token by token
+        words = answer.split(" ")
         for w in words:
-            yield w + " "
-            time.sleep(0.03)   # control speed
+            if w:
+                yield w + " "
+                time.sleep(0.03)
+
+        # After answer is done, emit structured sources on a sentinel line
+        sources_json = json.dumps(sources, ensure_ascii=False)
+        yield f"\n__SOURCES__:{sources_json}"
 
         print("✅ STREAM COMPLETE\n")
 

@@ -195,22 +195,50 @@ function App() {
     const decoder = new TextDecoder();
 
     let streamedText = "";
+    let sources = [];
 
-  while (true) {
-    const { done, value } = await reader.read();
-      if (done) break;
+    while (true) {
+      const { done, value } = await reader.read();
+        if (done) break;
 
-  const chunk = decoder.decode(value);
-  streamedText += chunk;
+      const chunk = decoder.decode(value);
 
-  setMessages(prev =>
-    prev.map(msg =>
-      msg.id === aiMessageId
-        ? { ...msg, content: streamedText }
-        : msg
-    )
-  );
-}
+      // Check for the sources sentinel anywhere in the accumulated buffer
+      const sentinelIdx = (streamedText + chunk).indexOf("\n__SOURCES__:");
+
+      if (sentinelIdx !== -1) {
+        // Split into answer part and sources part
+        const fullBuffer = streamedText + chunk;
+        const answerPart  = fullBuffer.substring(0, sentinelIdx);
+        const sourcesPart = fullBuffer.substring(sentinelIdx + "\n__SOURCES__:".length);
+
+        try {
+          sources = JSON.parse(sourcesPart);
+        } catch (_) {
+          sources = [];
+        }
+
+        // Final update – answer text only, plus sources
+        setMessages(prev =>
+          prev.map(msg =>
+            msg.id === aiMessageId
+              ? { ...msg, content: answerPart.trim(), sources }
+              : msg
+          )
+        );
+        break; // sentinel marks end of stream
+      }
+
+      // No sentinel yet – just stream the text normally
+      streamedText += chunk;
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === aiMessageId
+            ? { ...msg, content: streamedText }
+            : msg
+        )
+      );
+    }
 
     } catch (error) {
       if (error.name !== 'AbortError') {

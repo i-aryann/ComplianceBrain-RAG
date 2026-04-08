@@ -17,7 +17,7 @@ enc = tiktoken.get_encoding("cl100k_base")
 # STEP-1 → GROUP FULL DOCUMENT TEXT (not page wise)
 # ---------------------------------------------------
 docs = defaultdict(lambda: {
-    "text_parts": [],
+    "text_parts": [],   # list of (page_num, text)
     "regulation": None,
     "source_file": None
 })
@@ -31,7 +31,7 @@ with open(INPUT_FILE, "r", encoding="utf-8") as f:
 
         key = d.get("source_file")
 
-        docs[key]["text_parts"].append(d.get("text", ""))
+        docs[key]["text_parts"].append((d.get("page", 1), d.get("text", "")))
         docs[key]["regulation"] = d.get("regulation")
         docs[key]["source_file"] = key
 
@@ -96,18 +96,43 @@ all_chunks = []
 
 for doc_key in tqdm(docs.keys()):
 
-    full_text = "\n".join(docs[doc_key]["text_parts"])
+    # Build a list of (page, text) while keeping text in order
+    page_text_pairs = docs[doc_key]["text_parts"]
 
-    clauses = split_clauses(full_text)
+    # Build a simple page-lookup: character offset → page number
+    # We concatenate texts with a sentinel so we can map chunk text back to pages
+    page_map = []   # list of (cumulative_char_end, page_num)
+    combined_text = ""
+    for page_num, text in page_text_pairs:
+        combined_text += text + "\n"
+        page_map.append((len(combined_text), page_num))
+
+    clauses = split_clauses(combined_text)
 
     merged_chunks = build_chunks(clauses)
 
+    # Walk through merged_chunks and assign the best page from page_map
+    cursor = 0  # rough character position tracker in combined_text
     for ch in merged_chunks:
+
+        # Find page whose text first appears in the combined text near cursor
+        chunk_start = combined_text.find(ch[:50], cursor)  # anchor on first 50 chars
+        if chunk_start == -1:
+            chunk_start = cursor
+        cursor = chunk_start
+
+        # Pick the page whose cumulative end is *after* this position
+        page_num = 1
+        for end_pos, pg in page_map:
+            if chunk_start < end_pos:
+                page_num = pg
+                break
 
         entry = {
             "text": ch,
             "regulation": docs[doc_key]["regulation"],
-            "source_file": docs[doc_key]["source_file"]
+            "source_file": docs[doc_key]["source_file"],
+            "page": page_num
         }
 
         all_chunks.append(entry)

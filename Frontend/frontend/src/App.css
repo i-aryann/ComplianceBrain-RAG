@@ -225,6 +225,94 @@
   max-width: 280px;
 }
 
+/* ── Citation card styles ───────────────────────────────────── */
+.citations-section {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0, 47, 167, 0.08);
+}
+
+.citations-header {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #002FA7;
+  margin-bottom: 0.625rem;
+}
+
+.citations-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.citation-card {
+  background: rgba(0, 47, 167, 0.04);
+  border: 1px solid rgba(0, 47, 167, 0.12);
+  border-left: 3px solid #002FA7;
+  border-radius: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.citation-card:hover {
+  background: rgba(0, 47, 167, 0.08);
+  border-color: rgba(0, 47, 167, 0.25);
+}
+
+.citation-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 0.375rem;
+  background: rgba(0, 47, 167, 0.1);
+  color: #002FA7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.citation-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #002FA7;
+  background: rgba(0, 47, 167, 0.1);
+  border-radius: 0.25rem;
+  padding: 1px 6px;
+  line-height: 1.6;
+}
+
+.citation-file {
+  font-size: 11px;
+  color: #3F3F46;
+  font-weight: 500;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.citation-meta {
+  font-size: 10.5px;
+  color: #71717A;
+  margin-top: 1px;
+  font-variant-numeric: tabular-nums;
+}
+
+.citation-topic {
+  margin-left: 4px;
+  font-style: italic;
+}
+
 /* Responsive styles */
 @media (max-width: 768px) {
   .sidebar {
@@ -233,17 +321,21 @@
     z-index: 50;
     transition: left 0.3s ease;
   }
-  
+
   .sidebar.open {
     left: 0;
   }
-  
+
   .chat-area {
     padding: 1rem;
     padding-bottom: 120px;
   }
-  
+
   .input-container {
     padding: 1rem;
+  }
+
+  .citation-file {
+    max-width: 200px;
   }
 }
