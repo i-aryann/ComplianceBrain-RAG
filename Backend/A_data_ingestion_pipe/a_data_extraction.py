@@ -3,8 +3,11 @@ import os
 import json
 from tqdm import tqdm
 
-DATA_DIR = "Data"
-OUTPUT_FILE = "raw_documents.jsonl"
+# Resolve paths relative to Backend/ (one level above this script)
+_BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+DATA_DIR    = os.path.join(_BACKEND_DIR, "Data")
+OUTPUT_FILE = os.path.join(_BACKEND_DIR, "raw_documents.jsonl")
 
 def detect_regulation(folder_name):
     return folder_name.upper()
