@@ -194,50 +194,55 @@ function App() {
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
 
-    let streamedText = "";
+    const SENTINEL = "\n__SOURCES__:";
+    let buffer  = "";   // full accumulated text
     let sources = [];
 
     while (true) {
       const { done, value } = await reader.read();
-        if (done) break;
 
-      const chunk = decoder.decode(value);
-
-      // Check for the sources sentinel anywhere in the accumulated buffer
-      const sentinelIdx = (streamedText + chunk).indexOf("\n__SOURCES__:");
-
-      if (sentinelIdx !== -1) {
-        // Split into answer part and sources part
-        const fullBuffer = streamedText + chunk;
-        const answerPart  = fullBuffer.substring(0, sentinelIdx);
-        const sourcesPart = fullBuffer.substring(sentinelIdx + "\n__SOURCES__:".length);
-
-        try {
-          sources = JSON.parse(sourcesPart);
-        } catch (_) {
-          sources = [];
+      if (done) {
+        // Stream ended — check if sentinel is somewhere in the buffer
+        const sentinelIdx = buffer.indexOf(SENTINEL);
+        if (sentinelIdx !== -1) {
+          const answerPart  = buffer.substring(0, sentinelIdx);
+          const sourcesPart = buffer.substring(sentinelIdx + SENTINEL.length);
+          try { sources = JSON.parse(sourcesPart); } catch (_) { sources = []; }
+          setMessages(prev => prev.map(msg =>
+            msg.id === aiMessageId ? { ...msg, content: answerPart.trim(), sources } : msg
+          ));
         }
-
-        // Final update – answer text only, plus sources
-        setMessages(prev =>
-          prev.map(msg =>
-            msg.id === aiMessageId
-              ? { ...msg, content: answerPart.trim(), sources }
-              : msg
-          )
-        );
-        break; // sentinel marks end of stream
+        // If no sentinel (error case), the current content stays as-is
+        break;
       }
 
-      // No sentinel yet – just stream the text normally
-      streamedText += chunk;
-      setMessages(prev =>
-        prev.map(msg =>
+      // Decode the incoming chunk and append to buffer
+      buffer += decoder.decode(value, { stream: true });
+
+      // Check if the sentinel has arrived anywhere in the buffer
+      const sentinelIdx = buffer.indexOf(SENTINEL);
+
+      if (sentinelIdx !== -1) {
+        // We have the full answer — split and finish
+        const answerPart  = buffer.substring(0, sentinelIdx);
+        const sourcesPart = buffer.substring(sentinelIdx + SENTINEL.length);
+
+        try { sources = JSON.parse(sourcesPart); } catch (_) { sources = []; }
+
+        setMessages(prev => prev.map(msg =>
           msg.id === aiMessageId
-            ? { ...msg, content: streamedText }
+            ? { ...msg, content: answerPart.trim(), sources }
             : msg
-        )
-      );
+        ));
+        break; // done
+      }
+
+      // No sentinel yet — render the answer text as it arrives
+      // Strip any partial sentinel that might have been split across chunks
+      const safeText = buffer.replace(/\n__SOURCES__.*$/s, "");
+      setMessages(prev => prev.map(msg =>
+        msg.id === aiMessageId ? { ...msg, content: safeText } : msg
+      ));
     }
 
     } catch (error) {

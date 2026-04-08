@@ -81,15 +81,20 @@ with open(INPUT_FILE, "r", encoding="utf-8") as f:
 
         chunk = json.loads(line)
 
-        batch_texts.append(chunk["text"])
+        text = chunk.get("text", "").strip()
+
+        # ⭐ Skip chunks with empty text — NVIDIA API rejects them
+        if not text:
+            print(f"⚠️  Skipping empty chunk from {chunk.get('source_file', '?')}")
+            continue
+
+        batch_texts.append(text)
 
         batch_payloads.append({
-            "text": chunk.get("text", ""),
+            "text": text,
             "regulation": chunk.get("regulation", "UNKNOWN"),
             "source_file": chunk.get("source_file", "UNKNOWN"),
             "page": chunk.get("page", -1),
-
-            # ⭐ NEW SAFE DEFAULTS
             "clause_number": chunk.get("clause_number", "UNKNOWN"),
             "topic": chunk.get("topic", "GENERAL"),
             "regulation_type": chunk.get("regulation_type", "UNKNOWN"),
@@ -98,7 +103,10 @@ with open(INPUT_FILE, "r", encoding="utf-8") as f:
 
         if len(batch_texts) == BATCH_SIZE:
 
-            embeddings = model.embed_documents(batch_texts)
+            # Safety-net: replace any remaining empty strings (should never happen now)
+            safe_texts = [t if t.strip() else " " for t in batch_texts]
+
+            embeddings = model.embed_documents(safe_texts)
 
             points = [
                 PointStruct(
@@ -124,10 +132,11 @@ with open(INPUT_FILE, "r", encoding="utf-8") as f:
             batch_texts = []
             batch_payloads = []
 
-# Insert remaining
+# Insert remaining batch
 if batch_texts:
 
-    embeddings = model.embed_documents(batch_texts)
+    safe_texts = [t if t.strip() else " " for t in batch_texts]
+    embeddings = model.embed_documents(safe_texts)
 
     points = [
         PointStruct(
@@ -138,9 +147,17 @@ if batch_texts:
         for i in range(len(embeddings))
     ]
 
-    client.upsert(
-        collection_name=COLLECTION_NAME,
-        points=points
-    )
+    for attempt in range(3):
+        try:
+            client.upsert(
+                collection_name=COLLECTION_NAME,
+                points=points
+            )
+            break
+        except Exception as e:
+            print(f"⚠️ Final batch upload failed, retry {attempt+1}/3")
+            time.sleep(3)
+
+    id_counter += len(points)
 
 print("🚀 Embedding + Vector DB Insertion Complete")

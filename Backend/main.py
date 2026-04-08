@@ -2,10 +2,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from datetime import datetime
 from D_rag_pipeline.d_pipeline import RAGPipeline
-import json
-import time
 
 app = FastAPI()
 
@@ -17,7 +14,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ⭐ create pipeline object ONCE (important for performance)
+# Create pipeline once at startup (loads embedding model + BM25 index)
 rag = RAGPipeline()
 
 
@@ -33,34 +30,21 @@ def health():
 @app.post("/ask-stream")
 def ask_stream(q: Query):
     """
-    Streams the answer word-by-word (SSE-style plain text), then
-    finalises with a JSON line carrying structured source citations.
-    
+    True streaming endpoint.
+
+    Tokens arrive at the client the moment the LLM produces them —
+    no buffering, no fake time.sleep delay.
+
     Protocol:
-      • Every token line:  plain text word(s) followed by a space
-      • Final line:        "__SOURCES__:<json-array>"
+      • Regular chunks : plain text (LLM tokens, may be multi-char)
+      • Final line     : "\\n__SOURCES__:<json-array>"
     """
-
-    def generate():
-
-        print("\n🔥 STREAM QUERY:", q.question)
-
-        result = rag.run(q.question)
-
-        answer  = result.get("answer", "")
-        sources = result.get("sources", [])
-
-        # Stream answer token by token
-        words = answer.split(" ")
-        for w in words:
-            if w:
-                yield w + " "
-                time.sleep(0.03)
-
-        # After answer is done, emit structured sources on a sentinel line
-        sources_json = json.dumps(sources, ensure_ascii=False)
-        yield f"\n__SOURCES__:{sources_json}"
-
-        print("✅ STREAM COMPLETE\n")
-
-    return StreamingResponse(generate(), media_type="text/plain")
+    return StreamingResponse(
+        rag.run_stream(q.question),
+        media_type="text/plain",
+        headers={
+            # Disable any proxy/nginx buffering so chunks reach browser immediately
+            "X-Accel-Buffering": "no",
+            "Cache-Control":     "no-cache",
+        }
+    )
