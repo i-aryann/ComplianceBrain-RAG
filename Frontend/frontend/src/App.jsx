@@ -5,7 +5,7 @@ import { List } from '@phosphor-icons/react';
 import { Sidebar } from './components/Sidebar';
 import { ChatArea } from './components/ChatArea';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '/api';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
 const API = `${BACKEND_URL}/api`;
 
 // Generate unique IDs
