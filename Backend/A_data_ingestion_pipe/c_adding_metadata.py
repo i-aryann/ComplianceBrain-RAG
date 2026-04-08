@@ -1,9 +1,12 @@
 import json
 import re
+import os
 from tqdm import tqdm
 
-INPUT_FILE = "chunks.jsonl"
-OUTPUT_FILE = "chunks_with_metadata.jsonl"
+_BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+INPUT_FILE  = os.path.join(_BACKEND_DIR, "chunks.jsonl")
+OUTPUT_FILE = os.path.join(_BACKEND_DIR, "chunks_with_metadata.jsonl")
 
 
 def extract_clause_number(text):

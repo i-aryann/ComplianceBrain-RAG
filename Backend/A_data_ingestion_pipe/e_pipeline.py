@@ -3,7 +3,8 @@ import sys
 import os
 
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
+BACKEND_DIR = os.path.dirname(BASE_DIR)   # one level up → Backend/
 
 
 def run_step(step_name, script_name):
@@ -15,7 +16,10 @@ def run_step(step_name, script_name):
     print(f"Script → {script_path}")
     print(f"==============================\n")
 
-    result = subprocess.run([sys.executable, script_path])
+    result = subprocess.run(
+        [sys.executable, script_path],
+        cwd=BACKEND_DIR   # ← ensures 'Data/', '*.jsonl' paths resolve correctly
+    )
 
     if result.returncode != 0:
         print(f"\n❌ Pipeline Failed at Step → {step_name}")

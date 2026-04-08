@@ -3,9 +3,12 @@ import re
 import tiktoken
 from tqdm import tqdm
 from collections import defaultdict
+import os
 
-INPUT_FILE = "raw_documents.jsonl"
-OUTPUT_FILE = "chunks.jsonl"
+_BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+INPUT_FILE  = os.path.join(_BACKEND_DIR, "raw_documents.jsonl")
+OUTPUT_FILE = os.path.join(_BACKEND_DIR, "chunks.jsonl")
 
 CHUNK_SIZE = 400
 OVERLAP = 80
