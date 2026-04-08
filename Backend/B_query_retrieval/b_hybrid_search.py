@@ -2,6 +2,7 @@ import numpy as np
 from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
 from qdrant_client import QdrantClient
 from rank_bm25 import BM25Okapi
+from functools import lru_cache
 from tqdm import tqdm
 import time
 from dotenv import load_dotenv
@@ -10,33 +11,26 @@ import os
 load_dotenv()
 
 COLLECTION_NAME = "regulatory_rag"
+NVIDIA_API_KEY  = os.getenv("NVIDIA_API_KEY", "").strip()
 
-print("🔵 Loading embedding model...")
-model = NVIDIAEmbeddings(
-    model="nvidia/nv-embed-v1",
-    api_key= os.getenv("NVIDIA_API_KEY"),
-    truncate="NONE"
-)
-
+# ── Qdrant client (lightweight — no network call on init) ────────────────────
 print("🔵 Connecting Qdrant...")
 client = QdrantClient(
     url=os.getenv("QDRANT_URL"),
     api_key=os.getenv("QDRANT_API_KEY"),
 )
 
-# -------- LOAD FULL CORPUS --------
+# ── Load BM25 corpus at startup (fast — just Qdrant scroll, no ML model) ────
+print("🔵 Loading corpus from Qdrant...")
 
-print("🔵 Loading corpus from Qdrant (this may take time)...")
-
-corpus = []
+corpus       = []
 id_to_payload = {}
-id_list = []
+id_list      = []
 
 scroll_offset = None
 total = 0
 
 while True:
-
     points, scroll_offset = client.scroll(
         collection_name=COLLECTION_NAME,
         limit=500,
@@ -45,23 +39,43 @@ while True:
 
     for p in tqdm(points, desc="Loading batch"):
         text = p.payload.get("text")
-        if not text:          # skip null/empty payloads
+        if not text:
             continue
         corpus.append(text.split())
         id_to_payload[p.id] = p.payload
         id_list.append(p.id)
 
     total += len(points)
-    print("Loaded:", total)
-
     if scroll_offset is None:
         break
 
-print("Final corpus size:", total)
+print(f"✅ Loaded {total} chunks")
 
 print("🔵 Building BM25 index...")
-bm25 = BM25Okapi(corpus)
+bm25 = BM25Okapi(corpus) if corpus else BM25Okapi([["placeholder"]])
 print("✅ BM25 ready")
+
+# ── Embedding model — initialised LAZILY on first query ──────────────────────
+# NVIDIAEmbeddings makes a network validation call on __init__, which can take
+# 30-60s. Deferring it avoids blocking the entire server startup.
+_embed_model = None
+
+def _get_embed_model():
+    global _embed_model
+    if _embed_model is None:
+        print("🔵 Loading NVIDIA embedding model (first query)...")
+        _embed_model = NVIDIAEmbeddings(
+            model="nvidia/nv-embed-v1",
+            api_key=NVIDIA_API_KEY,
+            truncate="NONE"
+        )
+        print("✅ Embedding model ready")
+    return _embed_model
+
+
+@lru_cache(maxsize=256)
+def _embed_cached(query: str):
+    return tuple(_get_embed_model().embed_query(query))
 
 
 def hybrid_search(query, top_k=30):
@@ -69,88 +83,61 @@ def hybrid_search(query, top_k=30):
     print("\n🔎 Embedding query...")
     start_time = time.time()
 
-    query_vector = model.embed_query(query)
+    # ── Dense (vector) search ──────────────────────────────────────────────
+    vec = list(_embed_cached(query))
 
-    print("🔎 Vector searching...")
-    vector_hits = client.query_points(
+    dense_results = client.query_points(
         collection_name=COLLECTION_NAME,
-        query=query_vector,
-        limit=50
-    ).points
+        query=vec,
+        limit=top_k
+    )
+    dense_hits = [r.payload for r in dense_results.points]
 
-    vector_scores = {hit.id: hit.score for hit in vector_hits}
+    # ── Sparse (BM25) search ───────────────────────────────────────────────
+    scores   = bm25.get_scores(query.lower().split())
+    top_idx  = np.argsort(scores)[::-1][:top_k]
+    bm25_hits = [id_to_payload[id_list[i]] for i in top_idx if i < len(id_list)]
 
-    print("🔎 Running BM25 scoring...")
-    tokenized_query = query.split()
+    # ── RRF fusion ─────────────────────────────────────────────────────────
+    score_map = {}
+    for r, d in enumerate(dense_hits):
+        t = d.get("text") or ""
+        score_map[t] = score_map.get(t, 0) + 1 / (60 + r)
+    for r, d in enumerate(bm25_hits):
+        t = d.get("text") or ""
+        score_map[t] = score_map.get(t, 0) + 1 / (60 + r)
 
-    bm25_scores = bm25.get_scores(tokenized_query)
+    fused = sorted(score_map.items(), key=lambda x: x[1], reverse=True)
+    text_to_payload = {d.get("text", ""): d for d in dense_hits + bm25_hits}
 
-    bm25_top_idx = np.argsort(bm25_scores)[::-1][:50]
-
-    bm25_scores_dict = {
-        id_list[i]: bm25_scores[i] for i in bm25_top_idx
-    }
-
-    max_bm = max(bm25_scores_dict.values()) if bm25_scores_dict else 1
-
-    bm25_scores_dict = {
-        k: v / max_bm for k, v in bm25_scores_dict.items()
-    }
-
-    print("🔎 Fusing scores...")
-
-    candidate_ids = set(vector_scores.keys()) | set(bm25_scores_dict.keys())
-
-    hybrid_scores = {}
-
-    for cid in candidate_ids:
-        vec = vector_scores.get(cid, 0)
-        bm = bm25_scores_dict.get(cid, 0)
-        hybrid_scores[cid] = 0.7 * vec + 0.3 * bm
-
-    ranked = sorted(
-        hybrid_scores.items(),
-        key=lambda x: x[1],
-        reverse=True
-    )[:top_k]
+    ranked = [(t, s) for t, s in fused if t in text_to_payload][:top_k]
 
     end_time = time.time()
     print(f"⚡ Retrieval completed in {end_time - start_time:.2f} sec")
 
     results = []
+    for rank, (text, score) in enumerate(ranked):
+        payload = text_to_payload[text]
 
-    for rank, (pid, score) in enumerate(ranked):
+        # Debug print
+        print(f"\n--- Rank {rank+1} | Score {score:.4f}")
+        print(f"Regulation : {payload.get('regulation')}")
+        print(f"Source     : {payload.get('source_file')}")
+        print(f"Clause     : {payload.get('clause_number')}")
+        print(f"Page       : {payload.get('page')}")
 
-        payload = id_to_payload[pid]
-
-        print("\n----------------------")
-        print(f"Rank: {rank+1}")
-        print(f"Hybrid Score: {score:.4f}")
-        print(f"Regulation: {payload.get('regulation')}")
-        print(f"Clause: {payload.get('clause_number')}")
-        print(f"Topic: {payload.get('topic')}")
-        print("\nText Preview:")
-        print(payload.get("text")[:400])
-
-        # ⭐ BUILD RESULT OBJECT — include ALL fields needed for citations
         results.append({
-            "id":              pid,
+            "id":              payload.get("doc_id", rank),
             "score":           score,
             "text":            payload.get("text"),
             "regulation":      payload.get("regulation"),
-            "source_file":     payload.get("source_file"),       # was missing!
+            "source_file":     payload.get("source_file"),
             "clause":          payload.get("clause_number"),
-            "clause_number":   payload.get("clause_number"),     # both key styles
+            "clause_number":   payload.get("clause_number"),
             "topic":           payload.get("topic"),
             "page":            payload.get("page"),
             "regulation_type": payload.get("regulation_type"),
-            "doc_id":          payload.get("doc_id") or f"{payload.get('regulation','UNKNOWN')} | {payload.get('source_file','UNKNOWN')} | Clause {payload.get('clause_number','UNKNOWN')}",
+            "doc_id":          payload.get("doc_id") or f"{payload.get('regulation','?')} | {payload.get('source_file','?')} | Clause {payload.get('clause_number','?')}",
         })
 
-    # ⭐⭐⭐ MOST IMPORTANT LINE ⭐⭐⭐
     return results
-
-if __name__ == "__main__":
-    while True:
-        q = input("\nAsk Compliance Question: ")
-        hybrid_search(q)
