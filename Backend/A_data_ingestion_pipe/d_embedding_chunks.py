@@ -12,7 +12,7 @@ import time
 # CONFIG
 # ==============================
 
-INPUT_FILE = "chunks_with_metadata.jsonl"
+INPUT_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "chunks_with_metadata.jsonl")
 COLLECTION_NAME = "regulatory_rag"
 BATCH_SIZE = 8
 

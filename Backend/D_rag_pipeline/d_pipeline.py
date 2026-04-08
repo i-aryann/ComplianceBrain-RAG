@@ -41,49 +41,34 @@ class RAGPipeline:
         answer = generate_answer(prompt)
 
         # ---------- SOURCES ----------
-        sources = [
-            c.get("doc_id", "unknown")
-            for c in context_chunks
-        ]
+        # Build structured source objects for the frontend
+        sources = []
+        seen = set()
+
+        for c in context_chunks:
+            # Handle both key styles (hybrid_search vs raw Qdrant payload)
+            clause = c.get("clause") or c.get("clause_number") or "N/A"
+            page   = c.get("page") or "N/A"
+            regulation = c.get("regulation") or "N/A"
+            source_file = c.get("source_file") or "N/A"
+            topic  = c.get("topic") or "N/A"
+            doc_id = c.get("doc_id") or f"{regulation} | {source_file} | Clause {clause}"
+
+            # Deduplicate by doc_id
+            if doc_id in seen:
+                continue
+            seen.add(doc_id)
+
+            sources.append({
+                "doc_id":      doc_id,
+                "regulation":  regulation,
+                "source_file": source_file,
+                "clause":      clause,
+                "page":        page,
+                "topic":       topic,
+            })
 
         return {
-            "answer": answer,
+            "answer":  answer,
             "sources": sources
         }
-
-
-from fastapi import FastAPI
-from pydantic import BaseModel
-from fastapi.middleware.cors import CORSMiddleware
-
-from D_rag_pipeline.d_pipeline import RAGPipeline
-
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# ⭐ create pipeline object ONCE (important for performance)
-rag = RAGPipeline()
-
-
-class Query(BaseModel):
-    question: str
-
-
-@app.get("/")
-def home():
-    return {"status": "Regulatory RAG API running"}
-
-
-@app.post("/ask")
-def ask(q: Query):
-
-    result = rag.run(q.question)
-
-    return result
