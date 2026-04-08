@@ -5,7 +5,7 @@ import { List } from '@phosphor-icons/react';
 import { Sidebar } from './components/Sidebar';
 import { ChatArea } from './components/ChatArea';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '/api';
 const API = `${BACKEND_URL}/api`;
 
 // Generate unique IDs
@@ -249,8 +249,8 @@ function App() {
     } catch (error) {
       if (error.name !== 'AbortError') {
         console.error('Error sending message:', error);
-        toast.error('Failed to get response', {
-          description: 'Please try again or check your connection.',
+        toast.error(`Error: ${error.message || 'Unknown network error'}`, {
+          description: 'Please capture a screenshot of this error message.',
         });
         // Remove failed AI message
         setMessages(prev => prev.filter(msg => msg.id !== aiMessageId));
