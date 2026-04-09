@@ -38,6 +38,10 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd ~/ComplianceBrain-RAG
+            
+            # Clean up old unused images and stopped containers to free up space
+            docker system prune -af
+            
             docker compose pull
             docker compose up -d
-            docker compose restart nginx
+            docker compose restart frontend
