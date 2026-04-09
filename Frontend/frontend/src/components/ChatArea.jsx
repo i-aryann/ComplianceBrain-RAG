@@ -48,7 +48,7 @@ export const ChatArea = ({
             <span className="font-semibold text-sm">Pro Tip</span>
           </div>
           <p className="text-sm text-[#52525B]">
-            Ask about "GDPR Article 17 implications on user data deletion in legacy systems."
+            Ask about "What are rules an NBFC must comply in order to start a credit card business"
           </p>
         </motion.div>
       </motion.div>
