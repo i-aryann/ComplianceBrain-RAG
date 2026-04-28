@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import '@/App.css';
 import { Toaster, toast } from 'sonner';
 import { List } from '@phosphor-icons/react';
@@ -13,9 +13,40 @@ const generateId = () => Math.random().toString(36).substring(2) + Date.now().to
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [chatHistory, setChatHistory] = useState([]);
-  const [currentChatId, setCurrentChatId] = useState(null);
-  const [messages, setMessages] = useState([]);
+  const [chatHistory, setChatHistory] = useState(() => {
+    const saved = localStorage.getItem('compliance_chat_history');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [currentChatId, setCurrentChatId] = useState(() => {
+    const saved = localStorage.getItem('compliance_current_chat_id');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [messages, setMessages] = useState(() => {
+    const savedId = localStorage.getItem('compliance_current_chat_id');
+    const parsedId = savedId ? JSON.parse(savedId) : null;
+    if (parsedId) {
+      const savedMessages = localStorage.getItem(`compliance_messages_${parsedId}`);
+      return savedMessages ? JSON.parse(savedMessages) : [];
+    }
+    return [];
+  });
+
+  // Save chat history
+  useEffect(() => {
+    localStorage.setItem('compliance_chat_history', JSON.stringify(chatHistory));
+  }, [chatHistory]);
+
+  // Save current chat ID
+  useEffect(() => {
+    localStorage.setItem('compliance_current_chat_id', JSON.stringify(currentChatId));
+  }, [currentChatId]);
+
+  // Save messages for current chat
+  useEffect(() => {
+    if (currentChatId) {
+      localStorage.setItem(`compliance_messages_${currentChatId}`, JSON.stringify(messages));
+    }
+  }, [messages, currentChatId]);
   const [isLoading, setIsLoading] = useState(false);
   const [streamingMessageId, setStreamingMessageId] = useState(null);
   const abortControllerRef = useRef(null);
@@ -37,7 +68,9 @@ function App() {
   // Select a chat from history
   const handleSelectChat = useCallback((chatId) => {
     setCurrentChatId(chatId);
-    // In a real app, you'd load messages from backend here
+    // Load messages from local storage
+    const savedMessages = localStorage.getItem(`compliance_messages_${chatId}`);
+    setMessages(savedMessages ? JSON.parse(savedMessages) : []);
     setSidebarOpen(false);
   }, []);
 

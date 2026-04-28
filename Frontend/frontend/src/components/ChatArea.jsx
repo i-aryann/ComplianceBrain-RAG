@@ -26,14 +26,14 @@ export const ChatArea = ({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="max-w-2xl"
+        className="max-w-3xl w-full"
       >
-        <h2 className="font-bold text-3xl md:text-4xl tracking-tight mb-4">
-          Verify policy compliance with{' '}
-          <span className="text-[#002FA7]">Precision Intelligence.</span>
+        <h2 className="font-bold text-3xl md:text-4xl tracking-tight mb-4 whitespace-nowrap">
+          AI That Understands{' '}
+          <span className="text-[#002FA7]">Financial Regulations</span>
         </h2>
         <p className="text-[#52525B] text-base md:text-lg mb-8">
-          Upload your documents and let our RAG engine cross-reference against global regulatory standards in real-time.
+          Turn complex compliance documents into clear, actionable answers — grounded in real RBI and regulatory clauses with full traceability.
         </p>
 
         {/* Pro tip card */}

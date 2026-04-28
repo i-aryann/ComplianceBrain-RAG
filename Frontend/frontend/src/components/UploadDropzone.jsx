@@ -76,13 +76,12 @@ export const UploadDropzone = ({ onUpload }) => {
       </span>
       
       <motion.label
-        className={`upload-dropzone relative ${isDragging ? 'border-[#002FA7] bg-[#002FA7]/5' : ''}`}
-        onDragEnter={handleDragEnter}
-        onDragLeave={handleDragLeave}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.99 }}
+        className={`upload-dropzone relative opacity-60 cursor-not-allowed ${isDragging ? 'border-[#002FA7] bg-[#002FA7]/5' : ''}`}
+        onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
+        onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); }}
+        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+        onDrop={(e) => { e.preventDefault(); e.stopPropagation(); }}
+        onClick={(e) => e.preventDefault()}
         data-testid="upload-dropzone"
       >
         <input
@@ -90,7 +89,7 @@ export const UploadDropzone = ({ onUpload }) => {
           className="hidden"
           accept=".pdf,.txt,.doc,.docx"
           multiple
-          onChange={handleFileInput}
+          disabled
           data-testid="file-input"
         />
         <CloudArrowUp 
@@ -104,8 +103,8 @@ export const UploadDropzone = ({ onUpload }) => {
         <span className="text-xs text-[#52525B]/60">
           PDF, TXT, DOC up to 10MB
         </span>
-        <div className="absolute bottom-2 left-2 pointer-events-none opacity-50 select-none">
-          <span className="text-[10px] font-bold text-[#002FA7] uppercase tracking-wider">Live Soon</span>
+        <div className="absolute bottom-2 left-2 pointer-events-none select-none">
+          <span className="text-[11px] font-bold text-[#002FA7] bg-[#002FA7]/10 px-2 py-1 rounded-full uppercase tracking-wider">Feature coming soon</span>
         </div>
       </motion.label>
 
