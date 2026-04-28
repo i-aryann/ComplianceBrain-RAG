@@ -6,7 +6,8 @@ import {
   ClockCounterClockwise,
   FileText,
   CaretRight,
-  X
+  X,
+  Trash
 } from '@phosphor-icons/react';
 import { Input } from './ui/input';
 import { ScrollArea } from './ui/scroll-area';
@@ -17,6 +18,7 @@ export const Sidebar = ({
   currentChatId, 
   onNewChat, 
   onSelectChat,
+  onDeleteChat,
   onUpload,
   isOpen,
   onClose
@@ -111,17 +113,27 @@ export const Sidebar = ({
                 </p>
               ) : (
                 filteredHistory.map((chat) => (
-                  <motion.button
+                  <motion.div
                     key={chat.id}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className={`sidebar-link ${currentChatId === chat.id ? 'active' : ''}`}
+                    className={`sidebar-link relative flex items-center group cursor-pointer ${currentChatId === chat.id ? 'active' : ''}`}
                     onClick={() => onSelectChat(chat.id)}
                     data-testid={`chat-history-item-${chat.id}`}
                   >
                     <CaretRight size={14} className="flex-shrink-0" />
-                    <span className="truncate">{chat.title}</span>
-                  </motion.button>
+                    <span className="truncate pr-6 flex-1 text-left">{chat.title}</span>
+                    <button
+                      className="absolute right-2 p-1 text-[#52525B] hover:text-red-500 hover:bg-red-50 rounded opacity-0 group-hover:opacity-100 transition-all"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onDeleteChat) onDeleteChat(chat.id);
+                      }}
+                      title="Delete Chat"
+                    >
+                      <Trash size={14} />
+                    </button>
+                  </motion.div>
                 ))
               )}
             </div>

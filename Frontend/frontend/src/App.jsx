@@ -74,6 +74,17 @@ function App() {
     setSidebarOpen(false);
   }, []);
 
+  // Delete a chat from history
+  const handleDeleteChat = useCallback((chatIdToDelete) => {
+    setChatHistory(prev => prev.filter(chat => chat.id !== chatIdToDelete));
+    localStorage.removeItem(`compliance_messages_${chatIdToDelete}`);
+    
+    if (currentChatId === chatIdToDelete) {
+      setMessages([]);
+      setCurrentChatId(null);
+    }
+  }, [currentChatId]);
+
   // Handle file upload
   const handleUpload = useCallback((files) => {
     toast.success(`${files.length} file(s) uploaded successfully`, {
@@ -319,6 +330,7 @@ function App() {
         currentChatId={currentChatId}
         onNewChat={handleNewChat}
         onSelectChat={handleSelectChat}
+        onDeleteChat={handleDeleteChat}
         onUpload={handleUpload}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
